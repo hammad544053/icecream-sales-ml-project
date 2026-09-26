@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ice Cream Revenue Analytics & Sales Predictor</title>
+    <!-- Google Fonts & Font Awesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="app-layout">
+<!-- Top Navigation / Header -->
+        <header class="navbar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fas fa-ice-cream"></i>
+                </div>
+                <div>
+                    <h1>IceCream AI</h1>
+                    <span class="badge">Production Model v1.0</span>
+                </div>
+            </div>
+            <div class="nav-metrics">
+                <div class="metric-pill">
+                    <span class="metric-label">Model Status</span>
+                    <span class="status-indicator active"><i class="fas fa-circle"></i> Online</span>
+                </div>
+                <div class="metric-pill">
+                    <span class="metric-label">Model Accuracy (R<sup>2</sup>)</span>
+                    <span class="metric-value">0.944</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Container -->
+        <main class="dashboard-grid">
+
+            <!-- Left Column: Input Form -->
+            <section class="card form-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-sliders text-accent"></i> Environmental Parameters</h2>
+                    <p>Enter temperature and humidity values to compute revenue forecasts.</p>
+                </div>
+
+                <form method="POST" action="/predict" id="predictForm">
+                    <!-- Temperature Control -->
+                    <div class="form-group">
+                        <div class="label-wrapper">
+                            <label for="temperature">
+                                <i class="fas fa-temperature-three-quarters text-danger"></i> Temperature (°C)
+                            </label>
+                            <span class="value-badge" id="tempDisplay">{{ temperature if temperature else 25.0 }}°C</span>
+                        </div>
+                        <input type="number" id="temperature" name="temperature" step="0.1" min="10" max="45"
+                               placeholder="e.g. 25.0"
+                               value="{{ temperature if temperature else 25.0 }}" required
+                               oninput="document.getElementById('tempDisplay').innerText = this.value ? this.value + '°C' : '--°C'">
+                        <div class="range-labels">
+                            <span>Min: 10°C (Cold)</span>
+                            <span>Max: 45°C (Hot)</span>
+                        </div>
+                    </div>
+
+                    <!-- Humidity Control -->
+                    <div class="form-group">
+                        <div class="label-wrapper">
+                            <label for="humidity">
+                                <i class="fas fa-droplet text-primary"></i> Relative Humidity (%)
+                            </label>
+                            <span class="value-badge" id="humidityDisplay">{{ humidity if humidity else 60.0 }}%</span>
+                        </div>
+                        <input type="number" id="humidity" name="humidity" step="0.1" min="30" max="90"
+                               placeholder="e.g. 60.0"
+                               value="{{ humidity if humidity else 60.0 }}" required
+                               oninput="document.getElementById('humidityDisplay').innerText = this.value ? this.value + '%' : '--%'">
+                        <div class="range-labels">
+                            <span>Min: 30% (Dry)</span>
+                            <span>Max: 90% (Humid)</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-bolt"></i> Generate Revenue Forecast
+                    </button>
+                </form>
+            </section>
+
+            <!-- Right Column: Analytics & Prediction Output -->
+            <section class="right-panel">
+
+                <!-- Prediction Output Card -->
+                <div class="card result-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-chart-line text-accent"></i> Revenue Forecast</h2>
+                        <p>Inference output generated by Polynomial Regression pipeline.</p>
+                    </div>
+
+                    <div class="result-body">
+                        {% if prediction_text %}
+                            <div class="prediction-display">
+                                <span class="result-subtitle">Projected Sales</span>
+                                <h3 class="prediction-value">{{ prediction_text }}</h3>
+                            </div>
+
+                            {% if temperature and humidity %}
+                            <div class="input-summary">
+                                <h4>Inference Context</h4>
+                                <div class="tags-container">
+                                    <div class="tag">
+                                        <i class="fas fa-temperature-three-quarters text-danger"></i>
+                                        <span>Temp: <strong>{{ temperature }}°C</strong></span>
+                                    </div>
+                                    <div class="tag">
+                                        <i class="fas fa-droplet text-primary"></i>
+                                        <span>Humidity: <strong>{{ humidity }}%</strong></span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="empty-state">
+                                <div class="empty-icon"><i class="fas fa-chart-pie"></i></div>
+                                <h3>Awaiting Inputs</h3>
+                                <p>Enter temperature and humidity parameters on the left to compute real-time sales estimations.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Model Diagnostics Card -->
+                <div class="card info-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-microchip text-accent"></i> Model Performance & Architecture</h3>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-title">Algorithm</span>
+                            <span class="stat-value">Polynomial (deg=1)</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-title">RMSE</span>
+                            <span class="stat-value">12.16</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-title">MAE</span>
+                            <span class="stat-value">9.89</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-title">Dataset Size</span>
+                            <span class="stat-value">200 Samples</span>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; Ice Cream Sales Prediction Engine | Built for High-Performance Production</p>
+        </footer>
+    </div>
+</body>
+</html>
